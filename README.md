@@ -17,7 +17,7 @@ python3 -m pip install pyTCC --user
 Alternativly, you can also clone the repository from GitHub and install, with the following command.
 
 ```sh
-git clone --recurse-submodules git@github.com:yangyushi/pyTCC.git
+git clone --recurse-submodules https://github.com/yangyushi/pyTCC
 cd pyTCC
 python3 -m pip install . --user
 ```
