@@ -1,0 +1,9 @@
+include extern/TCC/extern/iniparser/inc/*.h
+include extern/TCC/extern/iniparser/src/*
+include extern/TCC/inc/*.h
+include extern/TCC/inc/clusters/*.h
+include extern/TCC/src/*.c
+include extern/TCC/src/clusters/*.c
+include extern/TCC/src/clusters/*.c
+include extern/TCC/src/CMakeLists.txt
+include extern/TCC/CMakeLists.txt

@@ -1,0 +1,3 @@
+[submodule "extern/TCC"]
+	path = extern/TCC
+	url = git@github.com:royallgroup/TCC.git
