@@ -5,6 +5,7 @@ import subprocess
 from tempfile import TemporaryDirectory
 import numpy as np
 import pandas as pd
+import json
 import configparser
 import matplotlib.pyplot as plt
 
@@ -56,7 +57,10 @@ class FrameIter:
         self.__frame_cursors = []
         self.__header_pattern = header_pattern
         self.__n_comment = n_comment
+        self.__filename = filename
+        self.__kwargs = {}
         self.__f = open(filename, 'r')
+
         if engine.lower() in ['pandas', 'pd', 'p']:
             self.__engine = 'pandas'
         elif engine.lower() in ['numpy', 'np', 'n']:
@@ -141,7 +145,6 @@ class FrameIter:
                 "Unknown engine name, select from [numpy] or [pandas]"
             )
         self.__kwargs['skiprows'] = self.__n_comment  # skip the comment
-        #self[0]
 
     def __parse(self):
         self.__frame_cursors = []
@@ -185,6 +188,86 @@ class FrameIter:
                 return result.shape[1]
         return 0
 
+    def to_json(self, filename=None):
+        """
+        Save the essential data in the calss.
+
+        Args:
+            filename (bool or str): if the filename is None, the data will\
+                be returned as a dictionary. If filename is str, the data\
+                will be write to the harddrive.
+
+        Return:
+            None or dict: the essential data to reconstruct the object.
+        """
+        data = {
+            'numbers': self.numbers,
+            'filename': self.__filename,
+            'frame': self.__frame,
+            'frame_cursors': self.__frame_cursors,
+            'header_pattern': self.__header_pattern,
+            'n_comment': self.__n_comment,
+            'engine': self.__engine,
+            'ndim': self.ndim,
+            'kwargs': self.__kwargs,  # TODO: ensure elements are serialisable
+        }
+        if isinstance(filename, type(None)):
+            return data
+        elif isinstance(filename, str):
+            with open(filename, 'w') as f:
+                json.dump(data, f)
+
+    @classmethod
+    def from_json(cls, data):
+        """
+        Create a frame iterable without parsing the file.\
+            Instead load the metadata from a dict, or a\
+            json file on the disk.
+
+        Args:
+            data (dict or str): a dictionary containing all elements\
+            (see `FrameIter.to_json`), or a string to the json file\
+            containing the dict.
+
+        Example:
+            >>> obj = FrameIter('sample.xyz')
+
+            >>> cache = obj.to_json()  # save data in memory
+            >>> new_obj = FrameIter.from_json(cache)
+
+            >>> obj.to_json("cache.json")  # save data in disk
+            >>> new_obj = FrameIter.from_json("cache.json")
+        """
+        if isinstance(data, str):
+            with open(data, 'r') as f:
+                data = json.load(f)
+        elif isinstance(data, dict):
+            pass
+        else:
+            raise TypeError(
+                "Invalid datatype"
+            )
+        self = cls.__new__(cls)  # bypass __init__
+        self.filename = data['filename']
+        self.numbers = data['numbers']
+        self.__frame = data['frame']
+        self.__frame_cursors = data['frame_cursors']
+        self.__header_pattern = data['header_pattern']
+        self.__n_comment = data['n_comment']
+        self.__engine = data['engine']
+        if self.__engine == 'numpy':
+            self.__func = np.loadtxt
+        elif self.__engine == 'pandas':
+            self.__func = pd.read_csv
+        else:
+            raise ValueError(
+                "Unknown engine name, select from [numpy] or [pandas]"
+            )
+        self.ndim = data['ndim']
+        self.__kwargs = data['kwargs']
+        self.__f = open(self.filename)
+        return self
+
 
 class XYZ(FrameIter):
     """
@@ -221,15 +304,37 @@ class TCC:
     A light-weight python wrapper for Topological Cluster Classification.
     It is especially designed to handle very large xyz files.
     """
-    def __init__(self, work_dir=""):
+    def __init__(self, work_dir="", load_cache=True):
+        """
+        Args:
+            work_dir (str): the path to the folder containing all tcc output\
+                files. If the folder does not exist, it will be created when\
+                `TCC.run` is called.
+            load_cache (bool): if a cached file exists in the work_dir, then\
+                use the cache to avoid repeated parsing.
+        """
         if not work_dir:
             work_dir = "."
         self.__dir = work_dir
         self.__raw_dir = os.path.join(self.__dir, 'raw_output')
         self.__cluster_dir = os.path.join(self.__dir, 'cluster_output')
-        self.clusters_to_analyse = []
-        self.cluster_bool = {}    # if a particle is in different clusters
-        self.cluster_detail = {}  # the particle indices of each cluster
+        cache_fn = os.path.join(self.__dir, 'pyTCC_cache.json')
+        if load_cache and os.path.isfile(cache_fn):
+            with open(cache_fn, 'rb') as f:
+                cache = json.load(f)
+            self.clusters_to_analyse = cache['clusters_to_analyse']
+            self.cluster_bool = {
+                name: XYZ.from_json(data_obj)
+                for name, data_obj in cache['cluster_bool'].items()
+            }
+            self.cluster_detail = {
+                name: XYZ.from_json(data_obj)
+                for name, data_obj in cache['cluster_detail'].items()
+            }
+        else:
+            self.clusters_to_analyse = []
+            self.cluster_bool = {}    # if a particle is in different clusters
+            self.cluster_detail = {}  # the particle indices of each cluster
 
     def __len__(self):
         """
@@ -401,7 +506,7 @@ class TCC:
             else:
                 fn = fn[0]
             self.cluster_bool.update({
-                cn: XYZ(fn, dtype=bool, true_values=['C'], false_values=['A'])
+                cn: XYZ(fn, true_values=['C'], false_values=['A'])
             })
 
     def __parse_cluster(self):
@@ -438,9 +543,11 @@ class TCC:
                 cn: ClusterOutput(fn, delimiter='\t')
             })
 
-    def parse(self, raw=True, cluster=True):
+    def parse(self, raw=True, cluster=True, cache=True):
         self.__parse_raw()
         self.__parse_cluster()
+        if cache:
+            self.__cache()
 
     def frame_bool(self, f, clusters=None):
         """
@@ -515,6 +622,25 @@ class TCC:
         df = pd.read_csv(fn, sep='\t', header=0, index_col=0)
         df.dropna(axis='columns', inplace=True)
         return df.T
+
+    def __cache(self):
+        """
+        Save the essential data to the hard disk, avoiding repeated parsing.
+        """
+        cache = {
+            'cluster_bool': {
+                name: data_obj.to_json()
+                for name, data_obj in self.cluster_bool.items()
+            },
+            'cluster_detail': {
+                name: data_obj.to_json()
+                for name, data_obj in self.cluster_detail.items()
+            },
+            'clusters_to_analyse': self.clusters_to_analyse,
+        }
+        cache_fn = os.path.join(self.__dir, 'pyTCC_cache.json')
+        with open(cache_fn, 'w') as f:
+            json.dump(cache, f)
 
 
 class TCCOTF(TCC):
