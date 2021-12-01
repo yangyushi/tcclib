@@ -15,13 +15,13 @@ cd tcclib
 python3 -m pip install . --user
 ```
 
-You will need a C compiler (like GCC) and CMake to build tcc. pyTCC also depends on numpy and pandas.
+You will need a C compiler (like GCC) and CMake to build tcc. `tcclib` also depends on numpy and pandas.
 
 ## Concept
 
 - This package is a wrapper of the original TCC software.
-- Upon installing `tcclib`, the `TCC` code will be compiled, and the binary executable will be used by `pyTCC`
-- There are two main functions of `pyTCC` :
+- Upon installing `tcclib`, the `TCC` code will be compiled, and the binary executable will be used by `tcclib`
+- There are two main functions of `tcclib` :
   1. To generate input files for `TCC`
   2. To parse the output file of `TCC`
 
@@ -29,7 +29,7 @@ You will need a C compiler (like GCC) and CMake to build tcc. pyTCC also depends
 
 ### Static Analysis
 
-The standard way to use `TCC` is to analying configurations stored in an XYZ file. In pyTCC the task can be carried out using the following code.
+The standard way to use `TCC` is to analying configurations stored in an XYZ file. In `tcclib` the task can be carried out using the following code.
 
 ```python
 import tcc
@@ -54,7 +54,7 @@ The result of the static analysis will be stored in `TCC-RESULT` folder, and it 
 
 ### Volatile Analysis (On the Fly)
 
-`pyTCC` also offered a way to analyse coordinates sotred as numpy array, getting the result, and then delete the output on the harddrive.
+`tcclib` also offered a way to analyse coordinates sotred as numpy array, getting the result, and then delete the output on the harddrive.
 
 ```python
 # Specifying the output folder of TCC to be TCC-RESULT
