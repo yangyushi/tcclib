@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import json
 import configparser
-import matplotlib.pyplot as plt
 
 from .utility import dump_xyz
 
