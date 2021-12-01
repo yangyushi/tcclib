@@ -8,19 +8,15 @@ This package aims to provide a stand-alone Python interface for the [TCC](https:
 
 ## Install
 
-[To be implemented] The package is on pypi, and you can install it with the following command.
-
-```sh
-python3 -m pip install pyTCC --user
-```
-
-Alternativly, you can also clone the repository from GitHub and install, with the following command.
+You can clone the repository from GitHub and install, with the following command.
 
 ```sh
 git clone --recurse-submodules https://github.com/yangyushi/pyTCC
 cd pyTCC
 python3 -m pip install . --user
 ```
+
+You will need a C compiler (like GCC) and CMake to build tcc. pyTCC also depends on numpy and pandas.
 
 ## Concept
 
