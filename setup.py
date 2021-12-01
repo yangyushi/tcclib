@@ -10,11 +10,11 @@ with open("README.md", "r", encoding="utf-8") as fh:
 subprocess.run("mkdir bin".split(" "), cwd='extern/TCC')
 subprocess.run("cmake -S . -B build".split(" "), cwd='extern/TCC')
 subprocess.run("make install".split(" "), cwd='extern/TCC/build')
-subprocess.run("cp extern/TCC/bin/tcc src/pyTCC/tcc".split(" "))
+subprocess.run("cp extern/TCC/bin/tcc src/tcc/tcc".split(" "))
 
 
 setuptools.setup(
-    name="pyTCC",
+    name="tcclib",
     version="0.0.1",
     author="Yushi Yang",
     author_email="yangyushi1992@icloud.com",
@@ -22,7 +22,7 @@ setuptools.setup(
     include_package_data=True,
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/yangyushi/pyTCC",
+    url="https://github.com/yangyushi/tcclib",
     classifiers=[
         "Programming Language :: Python :: 3",
         "Operating System :: OS Independent",
