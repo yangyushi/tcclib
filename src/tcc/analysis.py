@@ -166,7 +166,6 @@ class Parser:
         else:
             xyz_path = os.path.abspath(xyz)
 
-        self.xyz = XYZ(xyz_path)
         if not tcc_exec:
             tcc_exec = TCC_EXEC  # use the default TCC executable
 
@@ -182,7 +181,10 @@ class Parser:
         os.symlink(src=xyz_path, dst=soft_link)
 
         if isinstance(frames, type(None)):
-            frames = len(XYZ(xyz_path))
+            try:
+                frames = len(XYZ(xyz_path), align_opt=True)
+            except RuntimeError:
+                frames = len(XYZ(xyz_path, align_opt=False))
         self.__write_parameters(frames=frames, **kwargs)
         if silent:
             subprocess.run(
@@ -227,7 +229,7 @@ class Parser:
             else:
                 fn = fn[0]
             self.cluster_bool.update({
-                cn: XYZ(fn, true_values=['C'], false_values=['A'])
+                cn: XYZ(fn, true_values=['C'], false_values=['A'], align_opt=True)
             })
 
     def __parse_cluster(self):

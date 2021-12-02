@@ -1,9 +1,10 @@
 .*
 !.gitignore
+src/tcc/tcc
 build
+dev
 dist
 **/__pycache__
 *.pyc
 **/*.egg-info
-src/tcc/tcc
 **/tags

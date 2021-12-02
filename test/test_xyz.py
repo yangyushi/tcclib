@@ -18,7 +18,7 @@ def test_xyz():
         configurations.append(coord)
         tcc.dump_xyz(FILENAME, coord, comment="random")
 
-    xyz = tcc.XYZ(FILENAME, usecols=(1, 2, 3))
+    xyz = tcc.XYZ(FILENAME, usecols=(1, 2, 3), align_opt=True)
     for f, frame in enumerate(xyz):
         assert np.allclose(frame, configurations[f])
 

@@ -265,7 +265,18 @@ class XYZ(FrameIter):
     Fast XYZ parser that can handle very large xyz file
 
     """
-    def __init__(self, filename, engine='pandas', **kwargs):
+    def __init__(self, filename, engine='pandas', align_opt=False, **kwargs):
+        """
+        Args:
+            filename (str): the path to the xyz file to be loaded.
+            engine (str): choose between pandas or numpy, pandas is faster
+            align_opt (bool): Significantly (!) optimise the parsing speed\
+                if the data in the xyz file is *right-aligned*, meaning\
+                all coordinates have the same column width. If the \
+                optimisation was mistakenly used for not aligned data,\
+                an runtime error will be raised.
+        """
+        if align_opt: self._FrameIter__parse = self.__fast_parse
         super().__init__(
             filename,
             header_pattern=r'(\d+)\n',
@@ -273,6 +284,64 @@ class XYZ(FrameIter):
             engine=engine,
             **kwargs,
         )
+
+    def __detect_line_offset(self):
+        """
+        Find the byte offset one one line in the data.
+
+        Exampe:
+            >>> lines_to_jump = 1000
+            >>> offset = self.__detect_line_offset()
+            >>> new_location = self.__f.tell() + offset * 1000
+            >>> self.__f.seek(new_location)
+        """
+
+        f = self._FrameIter__f
+        hp = self._FrameIter__header_pattern
+        nc = self._FrameIter__n_comment
+        f.seek(0)
+
+        line = f.readline()
+        while line:
+            is_head = re.match(hp, line)
+            if is_head:
+                for _ in range(nc):
+                    f.readline()
+                cursor_before_line = f.tell()
+                line = f.readline()
+                if not re.match(hp, line):
+                    return f.tell() - cursor_before_line
+                else:
+                    line = f.readline()
+        raise RuntimeError("Can't detect the line offset")
+
+    def __fast_parse(self):
+        lo = self.__detect_line_offset()
+        self._FrameIter__frame_cursors = []
+        fcs = self._FrameIter__frame_cursors
+        f = self._FrameIter__f
+        hp = self._FrameIter__header_pattern
+        nc = self._FrameIter__n_comment
+
+        self.numbers = []
+        f.seek(0)
+        line = f.readline()
+
+        while line:
+            is_head = re.match(hp, line)
+            if is_head:
+                cursor = f.tell()
+                fcs.append(cursor)
+                n_particle = int(re.match('(\d+)\n', line).group(0))
+                self.numbers.append(n_particle)
+                for _ in range(nc):
+                    f.readline()
+                f.seek(f.tell() + n_particle * lo)
+                line = f.readline()
+            else:
+                raise RuntimeError(
+                    "Failed to parse the xyz file with align optimisation"
+                )
 
 
 class ClusterOutput(FrameIter):
@@ -290,9 +359,10 @@ class ClusterOutput(FrameIter):
         )
 
 
-def dump_xyz(filename, positions, comment=''):
+def dump_xyz(filename, positions, comment='', precision=10):
     """
-    Dump positions into an xyz file
+    Dump positions into an xyz file. The data columns will be right aligned,
+        enabling optimised parsing by `XYZ`.
 
     Args:
         filename (str): the name of the xyz file, it can be an existing file
@@ -303,12 +373,13 @@ def dump_xyz(filename, positions, comment=''):
         None
     """
     n, dim = positions.shape
+    fmt = f'%.{precision}e'
     with open(filename, 'a') as f:
         np.savetxt(
             f, positions, delimiter=' ',
             header='%s\n%s' % (n, comment),
             comments='',
-            fmt=['A %.8e'] + ['%.8e' for i in range(dim - 1)]
+            fmt=['A ' + fmt] + [fmt for i in range(dim - 1)]
         )
 
 

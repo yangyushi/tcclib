@@ -5,16 +5,16 @@ import tcc
 
 
 def test_otf():
-    n_frame = 10
+    n_frame = 4
 
     configurations = []
     for f in range(n_frame):
-        num = np.random.randint(100, 200)
-        coord = np.random.uniform(0, 10, (num, 3))
+        num = np.random.randint(10000, 11000)
+        coord = np.random.uniform(0, 100, (num, 3))
         configurations.append(coord)
 
     tcc_calc = tcc.OTF()
-    box = [10, 10, 10]
+    box = [100, 100, 100]
     tcc_calc(configurations, box)
 
     for f in range(n_frame):
