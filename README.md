@@ -47,7 +47,7 @@ parser.parse()
 # Typical Results
 parser.population    # populations clusters in different frames
 parser.frame_bool(0)  # For frame 0, if particle is inside a cluster
-parser.frame_count(0)  # For frame 0, if particle is inside a cluster
+parser.frame_count(1)  # For frame 1, count the number of clusters a particle belongs to
 ```
 
 The result of the static analysis will be stored in `TCC-RESULT` folder, and it can be re-analysed without calling `tcc.run`.
@@ -69,7 +69,7 @@ otf.run(coordinates, box=[10, 10, 10], raw=True, clusts=True)
 # Typical Results
 otf.population    # populations clusters in different frames
 otf.frame_bool(0)  # For frame 0, if particle is inside a cluster
-otf.frame_count(0)  # For frame 0, if particle is inside a cluster
+otf.frame_count(1)  # For frame 1, count the number of clusters a particle belongs to
 ```
 
 The results were sotred inside a temporary folder, and will be deleted uplon the finish of the Python interpreter.
