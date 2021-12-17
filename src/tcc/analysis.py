@@ -182,7 +182,7 @@ class Parser:
 
         if isinstance(frames, type(None)):
             try:
-                frames = len(XYZ(xyz_path), align_opt=True)
+                frames = len(XYZ(xyz_path, align_opt=True))
             except RuntimeError:
                 frames = len(XYZ(xyz_path, align_opt=False))
         self.__write_parameters(frames=frames, **kwargs)
