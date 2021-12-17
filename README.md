@@ -21,6 +21,7 @@ You will need a C compiler (like GCC) and CMake to build tcc. `tcclib` also depe
 
 - This package is a wrapper of the original TCC software.
 - Upon installing `tcclib`, the `TCC` code will be compiled, and the binary executable will be used by `tcclib`
+- If you have your own `tcc` binary in the computer, it will **not** be affected. `tcclib` will **not** make any system wise change. For example, `tcclib` will **not** do anything to environment varialbes like `$PATH`.
 - There are two main functions of `tcclib` :
   1. To generate input files for `TCC`
   2. To parse the output file of `TCC`
