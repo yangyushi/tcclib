@@ -8,3 +8,5 @@ dist
 *.pyc
 **/*.egg-info
 **/tags
+test/**
+!test/*.py
