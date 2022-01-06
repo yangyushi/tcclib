@@ -14,6 +14,7 @@ from .utility import dump_xyz, XYZ, ClusterOutput
 
 ROOT = os.path.split(__file__)[0]
 TCC_EXEC = os.path.abspath(f"{ROOT}/tcc")
+CACHE_FILENAME = "tcclib_cache.json"
 
 
 class Parser:
@@ -38,7 +39,7 @@ class Parser:
         self.__dir = work_dir
         self.__raw_dir = os.path.join(self.__dir, 'raw_output')
         self.__cluster_dir = os.path.join(self.__dir, 'cluster_output')
-        cache_fn = os.path.join(self.__dir, 'pyTCC_cache.json')
+        cache_fn = os.path.join(self.__dir, CACHE_FILENAME)
         if load_cache and os.path.isfile(cache_fn):
             with open(cache_fn, 'rb') as f:
                 cache = json.load(f)
@@ -381,7 +382,7 @@ class Parser:
             },
             'clusters_to_analyse': self.clusters_to_analyse,
         }
-        cache_fn = os.path.join(self.__dir, 'pyTCC_cache.json')
+        cache_fn = os.path.join(self.__dir, CACHE_FILENAME)
         with open(cache_fn, 'w') as f:
             json.dump(cache, f)
 
