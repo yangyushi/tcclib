@@ -7,7 +7,7 @@ import pandas as pd
 
 
 INT_TYPES = (
-    int, np.int, np.int8, np.uint8, np.int16, np.uint16,
+    int, np.int8, np.uint8, np.int16, np.uint16,
     np.int32, np.uint32, np.int64, np.uint64
 )
 
@@ -48,7 +48,7 @@ class FrameIter:
         self.__frame_cursors = []
         self.__header_pattern = header_pattern
         self.__n_comment = n_comment
-        self.__filename = filename
+        self.__filename = filename  # avoid user to change it (hopefully)
         self.__kwargs = {}
         self.__f = open(filename, 'r')
 
@@ -179,21 +179,25 @@ class FrameIter:
                 return result.shape[1]
         return 0
 
-    def to_json(self, filename=None):
+    def to_json(self, path='', save_name=''):
         """
         Save the essential data in the calss.
 
         Args:
-            filename (bool or str): if the filename is None, the data will\
-                be returned as a dictionary. If filename is str, the data\
+            path (str): if empty, self.__filename will be write to cache.
+            save_name (str): if the save_name is empty, the data will\
+                be returned as a dictionary. If save_name is str, the data\
                 will be write to the harddrive.
 
         Return:
             None or dict: the essential data to reconstruct the object.
         """
+        if not path:
+            path = self.__filename
+
         data = {
             'numbers': self.numbers,
-            'filename': self.__filename,
+            'filename': path,
             'frame': self.__frame,
             'frame_cursors': self.__frame_cursors,
             'header_pattern': self.__header_pattern,
@@ -202,11 +206,15 @@ class FrameIter:
             'ndim': self.ndim,
             'kwargs': self.__kwargs,  # TODO: ensure elements are serialisable
         }
-        if isinstance(filename, type(None)):
-            return data
-        elif isinstance(filename, str):
-            with open(filename, 'w') as f:
+
+        if save_name:
+            with open(save_name, 'w') as f:
                 json.dump(data, f)
+        else:
+            return data
+
+    def get_filename(self):
+        return self.__filename
 
     @classmethod
     def from_json(cls, data):
@@ -240,6 +248,59 @@ class FrameIter:
             )
         self = cls.__new__(cls)  # bypass __init__
         self.filename = data['filename']
+        self.numbers = data['numbers']
+        self.__frame = data['frame']
+        self.__frame_cursors = data['frame_cursors']
+        self.__header_pattern = data['header_pattern']
+        self.__n_comment = data['n_comment']
+        self.__engine = data['engine']
+        if self.__engine == 'numpy':
+            self.__func = np.loadtxt
+        elif self.__engine == 'pandas':
+            self.__func = pd.read_csv
+        else:
+            raise ValueError(
+                "Unknown engine name, select from [numpy] or [pandas]"
+            )
+        self.ndim = data['ndim']
+        self.__kwargs = data['kwargs']
+        self.__f = open(self.filename)
+        return self
+
+    @classmethod
+    def from_json_with_newname(cls, data, new_name):
+        """
+        Create a frame iterable without parsing the file.\
+            Instead load the metadata from a dict, or a\
+            json file on the disk. The filename will be updated\
+            by `new_name`.
+
+        Args:
+            data (dict or str): a dictionary containing all elements\
+            new_name (str): a new filename, that will repalce the filename in the json file\
+            (see `FrameIter.to_json`), or a string to the json file\
+            containing the dict.
+
+        Example:
+            >>> obj = FrameIter('sample.xyz')
+
+            >>> cache = obj.to_json()  # save data in memory
+            >>> new_obj = FrameIter.from_json(cache)
+
+            >>> obj.to_json("cache.json")  # save data in disk
+            >>> new_obj = FrameIter.from_json("cache.json")
+        """
+        if isinstance(data, str):
+            with open(data, 'r') as f:
+                data = json.load(f)
+        elif isinstance(data, dict):
+            pass
+        else:
+            raise TypeError(
+                "Invalid datatype"
+            )
+        self = cls.__new__(cls)  # bypass __init__
+        self.filename = new_name
         self.numbers = data['numbers']
         self.__frame = data['frame']
         self.__frame_cursors = data['frame_cursors']

@@ -43,14 +43,19 @@ class Parser:
             with open(cache_fn, 'rb') as f:
                 cache = json.load(f)
             self.clusters_to_analyse = cache['clusters_to_analyse']
-            self.cluster_bool = {
-                name: XYZ.from_json(data_obj)
-                for name, data_obj in cache['cluster_bool'].items()
-            }
-            self.cluster_detail = {
-                name: XYZ.from_json(data_obj)
-                for name, data_obj in cache['cluster_detail'].items()
-            }
+
+            self.cluster_bool, self.cluster_detail = {}, {}
+            for clust_name, data_obj in cache['cluster_bool'].items():
+                new_name = os.path.join(self.__dir, data_obj['filename'])
+                self.cluster_bool[clust_name] = XYZ.from_json_with_newname(
+                    data_obj, new_name=new_name
+                )
+
+            for clust_name, data_obj in cache['cluster_detail'].items():
+                new_name = os.path.join(self.__dir, data_obj['filename'])
+                self.cluster_detail[clust_name] = XYZ.from_json_with_newname(
+                    data_obj, new_name=new_name
+                )
         else:
             self.clusters_to_analyse = []
             self.cluster_bool = {}    # if a particle is in different clusters
@@ -65,6 +70,7 @@ class Parser:
                 return len(self.cluster_bool[key])
         else:
             return 0
+
 
     def __write_box(self, box):
         """
@@ -355,14 +361,22 @@ class Parser:
     def __cache(self):
         """
         Save the essential data to the hard disk, avoiding repeated parsing.
+
+        The cache do not remember the current working directory, when it was\
+            created. The path of files in the cache is always relative to the\
+            self.__dir, ie the result folder of TCC
         """
         cache = {
             'cluster_bool': {
-                name: data_obj.to_json()
+                name: data_obj.to_json(
+                    path=data_obj.get_filename()[len(self.__dir) + 1:]
+                )
                 for name, data_obj in self.cluster_bool.items()
             },
             'cluster_detail': {
-                name: data_obj.to_json()
+                name: data_obj.to_json(
+                    path=data_obj.get_filename()[len(self.__dir) + 1:]
+                )
                 for name, data_obj in self.cluster_detail.items()
             },
             'clusters_to_analyse': self.clusters_to_analyse,
@@ -417,8 +431,6 @@ class OTF(Parser):
 
         self._Parser__write_box(np.array(box))
         self._Parser__write_parameters(frames=len(configurations), **kwargs)
-
-        print(self._Parser__dir)
 
         if silent:
             subprocess.run(
