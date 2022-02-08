@@ -61,7 +61,7 @@ def test_parser():
     tcc_path_abs = os.path.abspath('tcc')
 
     # parse folder in different workiing dir
-    os.chdir('..')
+    os.chdir('/tmp')
     new_parser = tcc.Parser(tcc_path_abs)
     new_parser.parse()
     new_parser.frame_bool(0)
